@@ -1,0 +1,5 @@
+
+
+This project contains simple Python code that prints "Hello, World!" to the console.
+
+It demonstrates basic Git and GitHub usage, including creating repositories and pushing code.
