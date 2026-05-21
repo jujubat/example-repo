@@ -1,0 +1,94 @@
+[Unit]
+Description=Batuma GPRS Weather Service - Production WSGI Server
+Documentation=file:///opt/batuma_full_app/PRODUCTION_WSGI_SETUP.md
+After=network.target firewalld.service
+Wants=firewalld.service
+
+[Service]
+# Service type and process management
+Type=notify
+NotifyAccess=main
+User=www-data
+Group=www-data
+RuntimeDirectory=batuma
+StateDirectory=batuma
+CacheDirectory=batuma
+
+# Working directory and environment
+WorkingDirectory=/opt/batuma_full_app
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=batuma-wsgi
+
+# Environment variables
+Environment="PATH=/opt/batuma_full_app/.venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin"
+Environment="ENVIRONMENT=production"
+Environment="FLASK_ENV=production"
+Environment="FLASK_DEBUG=False"
+Environment="GUNICORN_BIND=0.0.0.0:8000"
+Environment="GUNICORN_WORKERS=4"
+Environment="GUNICORN_TIMEOUT=60"
+Environment="GUNICORN_KEEP_ALIVE=5"
+Environment="GUNICORN_MAX_REQUESTS=1000"
+Environment="GUNICORN_ACCESS_LOG=logs/access.log"
+Environment="GUNICORN_ERROR_LOG=logs/error.log"
+Environment="GUNICORN_LOG_LEVEL=info"
+
+# Pre-start script - ensure virtual environment and dependencies
+ExecStartPre=/bin/sh -c "[ -d /opt/batuma_full_app/.venv ] || python3 -m venv /opt/batuma_full_app/.venv"
+ExecStartPre=/opt/batuma_full_app/.venv/bin/pip install --upgrade -r /opt/batuma_full_app/requirements.txt
+ExecStartPre=/bin/sh -c "mkdir -p /opt/batuma_full_app/logs && chown www-data:www-data /opt/batuma_full_app/logs"
+
+# Main service command
+ExecStart=/opt/batuma_full_app/.venv/bin/gunicorn \
+    -c /opt/batuma_full_app/gunicorn_config.py \
+    --bind 0.0.0.0:8000 \
+    --workers 4 \
+    --worker-class sync \
+    --timeout 60 \
+    --access-logfile /opt/batuma_full_app/logs/access.log \
+    --error-logfile /opt/batuma_full_app/logs/error.log \
+    --log-level info \
+    wsgi:application
+
+# Restart policy
+Restart=on-failure
+RestartSec=10s
+StartLimitInterval=300
+StartLimitBurst=3
+
+# Process management
+KillMode=mixed
+KillSignal=SIGTERM
+TimeoutStopSec=10
+
+# Resource limits
+LimitNOFILE=65535
+LimitNPROC=32768
+MemoryLimit=512M
+CPUQuota=80%
+
+# Security hardening
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=yes
+ReadWritePaths=/opt/batuma_full_app/logs
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictRealtime=yes
+RestrictNamespaces=yes
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+SystemCallFilter=@system-service
+SystemCallErrorNumber=EPERM
+
+# Sandbox settings
+PrivateDevices=yes
+ProtectClock=yes
+ProtectHostname=yes
+
+[Install]
+WantedBy=multi-user.target
