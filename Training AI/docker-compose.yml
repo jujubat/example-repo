@@ -1,0 +1,36 @@
+# Docker Compose for Picup AI & Training Services
+# version field is obsolete and ignored by current Docker Compose
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_ENV=production
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/picupai
+    depends_on:
+      - db
+    volumes:
+      - ./backend:/app
+    restart: unless-stopped
+  db:
+    image: postgres:14
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: picupai
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+  # frontend service no longer needed - backend will serve static files directly
+  # frontend:
+  #   build: ./android
+  #   ports:
+  #     - "8080:8080"
+  #   depends_on:
+  #     - backend
+  #   restart: unless-stopped
+volumes:
+  pgdata:

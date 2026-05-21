@@ -1,0 +1,11 @@
+openapi: 3.0.0
+info:
+  title: Picup AI & Training Services API
+  version: 1.0.0
+paths:
+  /:
+    get:
+      summary: Welcome endpoint
+      responses:
+        '200':
+          description: OK

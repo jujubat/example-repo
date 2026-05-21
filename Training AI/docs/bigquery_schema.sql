@@ -1,0 +1,2 @@
+-- BigQuery schema for Picup AI & Training Services (placeholder)
+-- Define tables for users, documents, ratings, etc.
